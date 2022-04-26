@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+
+        <meta name="author" content="import-this">
+        <meta name="application-name" content="Bounce">
+        <meta name="description" content="A simple HTML5 game inspired by an old version of
+            Artem Rakhmatulin's Insanity! - #BounceGame">
+        <meta name="keywords" content="Bounce, clone, port, game, 2D, HTML5, Phaser,
+            import-this, github, github.io, open source">
+        <meta name="robots" content="index, follow">
+
+        <!-- Mobile devices magic. -->
+        <meta name="viewport" content="width=device-width, height=device-height, minimal-ui,
+            initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+
+        <!-- Open Graph for Facebook. -->
+        <meta property="og:url" content="https://import-this.github.io/bounce/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Bounce" />
+        <meta property="og:site_name" content="Bounce" />
+        <meta property="og:image" content="https://import-this.github.io/bounce/img/wallpaper.png" />
+        <meta property="og:description" content="A simple HTML5 game inspired by an old version of
+            Artem Rakhmatulin's Insanity! - #BounceGame" />
+
+        <title>Bounce</title>
+
+        <link rel="stylesheet" type="text/css" href="css/bounce.css">
+
+        <!-- ArrayBuffer and DataView support for IE9, required by P2 Physics. -->
+        <script type="text/javascript" src="js/dataview-polyfill.js"></script>
+        <script type="text/javascript" src="js/phaser-bounce.min.js"></script>
+        <script type="text/javascript" src="js/bounce.js"></script>
+    </head>
+    <body>
+        <div id="bounce-canvas">
+            <!-- Phaser will insert the canvas here. -->
+        </div>
+        <div id="menu">
+            <div id="center">
+                <div id="start-menu">
+                    <h2 id="bounce">Bounce</h2>
+                    <div id="description">
+                        <div>and don't let them catch you!</div>
+                    </div>
+                    <div id="instructions">
+                        Click anywhere and drag the mouse to move the circle.<br />
+                        Avoid the moving shapes for as long as you can.
+                    </div>
+                    <div id="mutators">
+                        <strong>Mutators:</strong>
+                        <label>
+                            <input id="fast" type="checkbox" name="mutator" value="fast">Fast
+                        </label>
+                        <label>
+                            <input id="speedup" type="checkbox" name="mutator" value="speedup">Speedup
+                        </label>
+                        <label>
+                            <input id="five" type="checkbox" name="mutator" value="five">Five
+                        </label>
+                        <!-- <label>
+                            <input id="big" type="checkbox" name="mutator" value="big">Big
+                        </label> -->
+                    </div>
+                    <div id="ui">
+                        <strong>UI:</strong>
+                        <label>
+                            <input id="mouse" type="radio" name="ui" value="mouse">Mouse
+                        </label>
+                        <label>
+                            <input id="touch" type="radio" name="ui" value="touch">Touch
+                        </label>
+                    </div>
+                    <div>
+                        <button type="button" id="start-button">Play</button>
+                    </div>
+                </div>
+                <div id="end-menu">
+                    <div class="win">
+                        <h2>Comrade, Yury, Congratulations!</h2>
+                        <div>You are almost there.</div>
+                        <div>To complete Mission #2 you need to find your first destination. This is your clue:</div>
+                        <div>
+                            <img id="clue" src="278682560_987411108576388_4084561070797088922_n.jpg" alt="clue">
+                        </div>
+                    </div>
+                    <div class="lose">
+                        <h2 class="curse">MWRH KOURADA!</h2>
+                        <h2 class="curse">GAMHMENE!</h2>
+                        <h2 class="curse">THA SE SPASW!</h2>
+                        <h2 class="curse">СУКА БЛЯТЬ!</h2>
+                        <div>You didn't complete mission #2!</div>
+                    </div>
+                    <table id="scores">
+                        <tr><td>Score:          <span id="curr-score"></span>   </td></tr>
+                        <tr><td>Times played:   <span id="times"></span>        </td></tr>
+                    </table>
+                    <div class="win">Don't forget to take a selfie with your first clue and send it to the special КГБ team</div>
+                    <div class="lose">
+                        <button type="button" id="restart-button">Try Again</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function(document, Bounce) {
+                var curseIndex = 0;
+
+                function showStartMenu() {
+                    document.getElementById('start-menu').style.display = 'block';
+                    document.getElementById('menu').style.display = 'block';
+                }
+                function hideStartMenu() {
+                    document.getElementById('menu').style.display = 'none';
+                    document.getElementById('start-menu').style.display = 'none';
+                }
+
+                function showEndMenu() {
+                    if (game.bounce.score === game.bounce.winningScore) {
+                        document.querySelectorAll('.win').forEach(function (el) { el.style.display = 'block'; });
+                        document.querySelectorAll('.lose').forEach(function (el) { el.style.display = 'none'; });
+                    } else {
+                        document.querySelectorAll('.win').forEach(function (el) { el.style.display = 'none'; });
+                        document.querySelectorAll('.lose').forEach(function (el) { el.style.display = 'block'; });
+
+                        var curses = document.querySelectorAll('.curse');
+                        curses.forEach(function (el) { el.style.display = 'none'; });
+                        curses[curseIndex].style.display = 'block';
+                        curseIndex = (curseIndex + 1) % curses.length;
+                    }
+
+                    document.getElementById('curr-score').innerHTML = game.bounce.score.toString();
+                    //document.getElementById('high-score').innerHTML = Bounce.storage.getHighScore();
+                    document.getElementById('times').innerHTML = Bounce.storage.getTimesPlayed();
+
+                    document.getElementById('end-menu').style.display = 'block';
+                    document.getElementById('menu').style.display = 'block';
+                }
+                function hideEndMenu() {
+                    document.getElementById('menu').style.display = 'none';
+                    document.getElementById('end-menu').style.display = 'none';
+                }
+
+                var prefix = 'bounce_', game, ui, checkboxes, radioButtons;
+
+                // Select the corresponding radio button
+                ui = window.localStorage.getItem(prefix + 'ui');
+                if (ui) {
+                    // based on previous settings
+                    document.getElementById(ui).checked = true;
+                } else {
+                    // or arbitrarily. (Phaser's device detection doesn't work.)
+                    ui = 'mouse';
+                    document.getElementById(ui).checked = true;
+                }
+
+                // Let the game begin!
+                game = Bounce.play('bounce-canvas', {
+                    onMainMenuOpen: showStartMenu,
+                    onEndMenuOpen: showEndMenu,
+                    isMouse: (ui === 'mouse'),
+                    fast: document.getElementById('fast').checked,
+                    speedup: document.getElementById('speedup').checked,
+                    five: document.getElementById('five').checked,
+                    //big: document.getElementById('big').checked
+                });
+
+                // Handle mutator changes on the fly.
+                function checkboxChangeHandler(event) {
+                    game.bounce[this.value] = this.checked;
+                    game.state.start('Preloader');
+                }
+                checkboxes = document.querySelectorAll('input[name="mutator"]');
+                Array.prototype.forEach.call(checkboxes, function addEventHandler(checkbox) {
+                    checkbox.addEventListener('change', checkboxChangeHandler);
+                });
+
+                // Handle UI changes on the fly.
+                function radioChangeHandler(event) {
+                    window.localStorage.setItem(prefix + 'ui', this.value);
+                    game.bounce.isMouse = (this.value === 'mouse');
+                    game.state.start('Preloader');
+                }
+                radioButtons = document.querySelectorAll('input[name="ui"]');
+                Array.prototype.forEach.call(radioButtons, function addEventHandler(radio) {
+                    radio.addEventListener('change', radioChangeHandler);
+                });
+
+                // Setup UI buttons.
+                document.getElementById('start-button').addEventListener('click', function(event) {
+                    hideStartMenu();
+                    game.state.start('Game');
+                }, false);
+                document.getElementById('restart-button').addEventListener('click', function(event) {
+                    function clearSelection() {
+                        if (window.getSelection) {
+                            if (window.getSelection().empty) {                  // Chrome
+                                window.getSelection().empty();
+                            } else if (window.getSelection().removeAllRanges) { // Firefox
+                                window.getSelection().removeAllRanges();
+                            }
+                        } else if (document.selection) {                        // IE
+                            document.selection.empty();
+                        }
+                    }
+
+                    hideEndMenu();
+                    // Dragging on canvas may have caused html selection when the
+                    // end menu pops up, since the player moves the mouse while it
+                    // is still down and the canvas stops receiving input. So, clear
+                    // the selection so as to not move it when the player starts
+                    // dragging again.
+                    // Note: I didn't enjoy this bug.
+                    clearSelection();
+                    game.state.start('Game');
+                }, false);
+            }(document, Bounce));
+        </script>
+    </body>
+</html>
